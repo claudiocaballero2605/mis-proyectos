@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+  <title>Actividad: Sitio Web Interactivo (Videos, Audios, Mapas, Imágenes)</title>
+  <meta name="description" content="Actividad didáctica paso a paso con solución en un solo archivo HTML/CSS/JS. Incluye menú, galería de videos, galería de audios, mapas y galería de imágenes con modal y filtros." />
+  <style>
+    /* =====================
+       1) ESTILOS GLOBALES
+       ===================== */
+    :root{
+      --bg: #1a8006;         /* slate-900 */
+      --card: #032470;       /* gray-900 */
+      --muted: #cbd5e1;      /* slate-300 */
+      --text: #121312;       /* slate-50 */
+      --brand: #22d3ee;      /* cyan-400 */
+      --brand-2: #0cf80c;    /* violet-400 */
+      --accent: #684b24;     /* emerald-400 */
+      --danger: #fb7185;     /* rose-400 */
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 80% -20%, rgba(225, 229, 230, 0.15), transparent 70%),
+                  radial-gradient(900px 700px at 10% -10%, rgba(167,139,250,.18), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .container{width:min(1200px, 92%); margin-inline:auto}
+    .section{padding:64px 0}
+    .section h2{font-size:clamp(1.4rem, 2vw + 1rem, 2rem); margin:0 0 18px}
+    .muted{color:var(--muted)}
+
+    /* =====================
+       2) HEADER + NAV
+       ===================== */
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter:saturate(1.2) blur(8px);
+      background:linear-gradient(to right, rgba(17,24,39,.85), rgba(15,23,42,.85));
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .nav{display:flex; align-items:center; justify-content:space-between; padding:14px 0}
+    .brand{display:flex; gap:10px; align-items:center; font-weight:700; letter-spacing:.2px}
+    .brand .dot{width:10px;height:10px;border-radius:999px;background:linear-gradient(135deg,var(--brand),var(--brand-2))}
+    .nav ul{display:flex; gap:14px; list-style:none; padding:0; margin:0}
+    .nav a{padding:8px 10px; border-radius:10px; font-size:.95rem; color:var(--muted)}
+    .nav a:hover{background:rgba(255,255,255,.06); color:var(--text)}
+    .nav a.active{background:linear-gradient(135deg, rgba(34,211,238,.15), rgba(167,139,250,.12)); color:var(--text); border:1px solid rgba(255,255,255,.08)}
+
+    /* Burger (móvil) */
+    .burger{display:none; background:transparent; border:1px solid rgba(255,255,255,.12); color:var(--text); padding:8px 10px; border-radius:10px}
+    @media (max-width: 840px){
+      .burger{display:inline-flex; align-items:center; gap:8px}
+      .nav ul{position:absolute; left:0; right:0; top:64px; padding:16px; flex-direction:column; background:linear-gradient(to bottom, rgba(17,24,39,.98), rgba(15,23,42,.98)); border-bottom:1px solid rgba(255,255,255,.06); display:none}
+      .nav ul.open{display:flex}
+    }
+
+    /* =====================
+       3) HERO / INTRO
+       ===================== */
+    .hero{display:grid; grid-template-columns:1.2fr .8fr; gap:28px; align-items:center; padding:48px 0}
+    .pill{display:inline-flex; align-items:center; gap:8px; font-size:.9rem; color:var(--bg); background:linear-gradient(135deg, var(--brand), var(--brand-2)); padding:6px 10px; border-radius:999px; box-shadow:var(--shadow)}
+    .hero h1{font-size:clamp(1.8rem, 2.5vw + 1.2rem, 3rem); margin:10px 0 8px; line-height:1.08}
+    .hero p{color:var(--muted)}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px; padding:18px; box-shadow:var(--shadow)
+    }
+    @media (max-width: 920px){.hero{grid-template-columns:1fr}}
+
+    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:.9rem; border:1px solid rgba(255,255,255,.2); padding:.15rem .4rem; border-radius:8px}
+
+    /* =====================
+       4) GRELHAS / CARDS
+       ===================== */
+    .grid{display:grid; gap:16px}
+    .grid.videos{grid-template-columns:repeat(auto-fill, minmax(260px,1fr))}
+    .grid.audios{grid-template-columns:repeat(auto-fill, minmax(260px,1fr))}
+    .grid.images{grid-template-columns:repeat(auto-fill, minmax(160px,1fr))}
+
+    figure{margin:0}
+    .thumb{border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.08); background:#0b1224}
+    .thumb img{width:100%; height:180px; object-fit:cover}
+    .thumb video{width:100%; height:180px; object-fit:cover; display:block; background:#000}
+    .thumb .pad{padding:12px}
+    .caption{display:flex; align-items:center; justify-content:space-between; gap:8px}
+    .caption h3{font-size:1rem; margin:0}
+    .badge{font-size:.8rem; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.12); color:var(--muted)}
+
+    /* =====================
+       5) MAPA
+       ===================== */
+    .map-wrap{display:grid; grid-template-columns: 1fr; gap:12px}
+    .map-inputs{display:flex; flex-wrap:wrap; gap:10px}
+    .input, .btn{background:rgba(255,255,255,.04); color:var(--text); border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:10px 12px}
+    .btn{cursor:pointer}
+    iframe.map{width:100%; height:420px; border:0; border-radius:16px}
+
+    /* =====================
+       6) GALERÍA DE IMÁGENES + MODAL
+       ===================== */
+    .filters{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px}
+    .filters .btn.active{outline:2px solid var(--brand)}
+    .grid.images img{width:100%; height:160px; object-fit:cover; border-radius:12px; border:1px solid rgba(255,255,255,.08); cursor:pointer}
+    .lightbox{position:fixed; inset:0; background:rgba(0,0,0,.75); display:grid; place-items:center; opacity:0; pointer-events:none; transition:.2s ease; padding:20px}
+    .lightbox.open{opacity:1; pointer-events:auto}
+    .lightbox-inner{max-width:min(92vw,1100px); max-height:88vh; display:grid; gap:12px; background:#0b1224; border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px}
+    .lightbox img{max-height:72vh; width:auto; justify-self:center; border-radius:12px}
+    .lightbox .top{display:flex; align-items:center; justify-content:space-between}
+    .icon-btn{background:transparent; border:1px solid rgba(255,255,255,.2); color:var(--text); padding:8px 10px; border-radius:10px; cursor:pointer}
+
+    /* =====================
+       7) UTILIDADES
+       ===================== */
+    .sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+    .spacer{height:20px}
+    .cta{display:inline-flex; align-items:center; gap:10px; background:linear-gradient(135deg, var(--brand), var(--brand-2)); color:#041421; border:0; padding:10px 14px; border-radius:12px; font-weight:700; box-shadow:var(--shadow); cursor:pointer}
+    .top-btn{position:fixed; right:18px; bottom:18px; opacity:.85}
+
+    /* Compensa header sticky para los anclajes */
+    section{scroll-margin-top:80px}
+
+    /* Motion reduce */
+    @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  </style>
+</head>
+<body>
+  <!-- =============================================
+       ACTIVIDAD DE APRENDIZAJE (paso a paso)
+       =============================================
+       Instrucciones para el alumno (sección colapsable). La solución completa
+       está en ESTE MISMO ARCHIVO más abajo (HTML + CSS + JS). 
+  -->
+  <header>
+    <nav class="container nav" aria-label="Navegación principal">
+      <a href="#inicio" class="brand" aria-label="Ir a inicio">
+        <span class="dot" aria-hidden="true"></span>
+        Sitio Interactivo
+      </a>
+      <button id="burger" class="burger" aria-controls="menu" aria-expanded="false">☰ Menú</button>
+      <ul id="menu" role="menubar">
+        <li role="none"><a role="menuitem" class="active" href="#videos">Videos</a></li>
+        <li role="none"><a role="menuitem" href="#audios">Audios</a></li>
+        <li role="none"><a role="menuitem" href="#mapas">Mapas</a></li>
+        <li role="none"><a role="menuitem" href="#imagenes">Imágenes</a></li>
+        <li role="none"><a role="menuitem" href="#actividad">Actividad</a></li>
+        <li role="none"><a role="menuitem" href="#contáctanos">Contáctanos</a></li>
+        <li role="none"><a role="menuitem" href="#sobre nosotros">Sobre Nosotros </a></li>
+         <li role="none"><a role="menuitem" href="#sobre mi">Sobre mi </a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="inicio" class="container">
+    <!-- HERO -->
+    <section class="hero">
+      <div>
+        <span class="pill">Venta de cartuchos de toner</span>
+        <h1>ITANS TONER SERVICE</h1>
+        <p class="muted">Tenemos la mayoria de las marcas de cartuchos de toner compatibles, recargas y  originales, con garantias al 100%
+          
+        </p>
+        <div class="spacer"></div>
+        <a class="cta" href="#actividad">Ver pasos de la actividad</a>
+      </div>
+      <div class="card">
+        <details open>
+          <summary><strong>¿Qué contiene este proyecto?</strong></summary>
+          <ul>
+            <li>Menú de navegación <em>sticky</em> con estado activo y <span class="kbd">hamburguesa</span> en móvil.</li>
+            <li>Galería de <strong>videos</strong> (HTML5) con tarjetas responsivas.</li>
+            <li>Galería de <strong>audios</strong> con pistas de ejemplo.</li>
+            <li>Sección de <strong>mapas</strong> con un buscador que actualiza el mapa <em>embed</em>.</li>
+            <li>Galería de <strong>imágenes</strong> con <em>modal</em> (lightbox) y filtros por categoría.</li>
+          </ul>
+          <p class="muted">Tip: reemplaza las URLs de ejemplo por archivos locales en <code>/assets/</code> cuando lo subas a tu proyecto.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- GALERÍA DE VIDEOS -->
+    <section id="videos" class="section">
+      <h2>🎬 Galería de videos</h2>
+      <p class="muted">Ejemplos con <code>&lt;video&gt;</code> usando <code>controls</code> y <code>preload="none"</code> (mejor rendimiento).</p>
+      <div class="grid videos">
+        <figure class="thumb">
+          <video preload="none" controls poster="https://via.placeholder.com/1280x720?text=Video+1">
+            <source src="videos/The Avener, Phoebe Killdeer - Fade Out Lines (Official Music Video) - TheAvenerVEVO (240p, h264).mp4" type="video/mp4">
+            Tu navegador no soporta video HTML5.
+          </video>
+          <div class="pad caption">
+            <h3>Big Buck Bunny (mp4)</h3>
+            <span class="badge">720p</span>
+          </div>
+        </figure>
+
+        <figure class="thumb">
+          <video preload="none" controls poster="https://via.placeholder.com/1280x720?text=Video+2">
+            <source src="videos/Pantum ECUADOR - Como recargar tu cartucho tóner Pantum PD-219 _ P2509-M6559 - Soprint   Tóners, Tintas e Impresoras (480p, h264).mp4" type="video/mp4">
+          </video>
+          <div class="pad caption">
+            <h3>Sample 5s (mp4)</h3>
+            <span class="badge">Recarga de pantum</span>
+          </div>
+        </figure>
+
+        <figure class="thumb">
+          <video preload="none" controls poster="https://via.placeholder.com/1280x720?text=Video+3">
+            <source src="videos/Review del Multifincional InkBenefit Tank DCP-T720DW de Brother.mp4" type="video/mp4">
+          </video>
+          <div class="pad caption">
+            <h3>Review Impresora Brother (mp4)</h3>
+            <span class="badge">MP4</span>
+          </div>
+        </figure>
+         
+      </div>
+    </section>
+
+    <!-- GALERÍA DE AUDIOS -->
+    <section id="audios" class="section">
+      <h2>🎧 Galería de audios</h2>
+      <p class="muted">Etiquetas <code>&lt;audio controls&gt;</code> con pistas de ejemplo.</p>
+      <div class="grid audios">
+        <article class="thumb">
+          <div class="pad">
+            <h3>Caballo (mp3)</h3>
+            <audio preload="none" controls style="width:100%">
+              <source src="https://www.w3schools.com/html/horse.mp3" type="audio/mpeg">
+              Tu navegador no soporta audio HTML5.
+            </audio>
+          </div>
+        </article>
+        <article class="thumb">
+          <div class="pad">
+            <h3>Sample 6s (mp3)</h3>
+            <audio preload="none" controls style="width:100%">
+              <source src="https://samplelib.com/lib/preview/mp3/sample-6s.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+        </article>
+        <article class="thumb">
+          <div class="pad">
+            <h3>Sample 3s (mp3)</h3>
+            <audio preload="none" controls style="width:100%">
+              <source src="https://samplelib.com/lib/preview/mp3/sample-3s.mp3" type="audio/mpeg">
+            </audio>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- MAPAS -->
+    <section id="mapas" class="section">
+      <h2>🗺️ Mapas</h2>
+      <p class="muted">Usamos un <code>&lt;iframe&gt;</code> de Google Maps (no requiere API key para <em>embed</em>). Busca una ciudad y actualiza el mapa.</p>
+      <div class="map-wrap">
+        <div class="map-inputs">
+          <input id="place" class="input" placeholder="Ej.: Asunción, Paraguay" value="Asunción, Paraguay" aria-label="Buscar lugar" />
+          <button id="setMap" class="btn">Mostrar en mapa</button>
+          <button id="asuncion" class="btn">Asunción</button>
+          <button id="encarnacion" class="btn">Encarnación</button>
+        </div>
+        <iframe id="mapFrame" class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen
+          src="https://www.google.com/maps?q=Ciudad del este, Paraguay&output=embed"></iframe>
+          
+      </div>
+    </section>
+
+    <!-- GALERÍA DE IMÁGENES -->
+    <section id="imagenes" class="section">
+      <h2>🖼️ Galería de imágenes</h2>
+      <p class="muted">Haz clic para ver en <em>modal</em>. Usa los filtros por categoría.</p>
+     <div class="filters" role="toolbar" aria-label="Filtros de imágenes">
+        <button class="btn active" data-filter="todos">Todos</button>
+        <button class="btn" data-filter="toner">Toner</button>
+        <button class="btn" data-filter="impresoras">Impresoras</button>
+      </div>
+
+      <div id="imageGrid" class="grid images">
+        <!-- Nota: usando picsum.photos con IDs fijos -->
+        <img src="fotos/impresor_ tinta_continua.jpg" alt="impresora_tinta_continua" loading="lazy" data-cat="impresoras">
+        <img src="fotos/L3150_690x460_1-botellas-T544.jpg" alt="cinta" loading="lazy" data-cat="toner">
+        <img src="fotos/laser.jpg" alt="laser" loading="lazy" data-cat="impresoras">
+        <img src="fotos/images.jpg" alt="tintacontinua" loading="lazy" data-cat="impresoras">
+        
+      </div>
+
+      <!-- Modal / Lightbox -->
+      <div id="lightbox" class="lightbox" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="lightbox-inner">
+          <div class="top">
+            <span id="lbCaption" class="muted">Imagen</span>
+            <button id="lbClose" class="icon-btn" aria-label="Cerrar (Esc)">✕</button>
+          </div>
+          <img id="lbImg" alt="Vista ampliada" />
+        </div>
+      </div>
+    </section><section id="inicio" class="hero">
+        <div class="container">
+            <h2>Soluciones de Impresión Confiables</h2>
+            <p><strong>Venta de Cartuchos de Tóner y Mantenimiento de Impresoras.</strong></p>
+            <p class="resaltado">¡16 años de experiencia en el mercado!</p>
+            <a href="#contacto" class="btn">Contáctanos Hoy</a>
+        </div>
+    </section>
+
+    <section id="servicios" class="section">
+        <div class="container">
+            <h2>Nuestros Servicios</h2>
+            <div class="servicio-list">
+                <div class="servicio-item">
+                    <h3>Venta de Cartuchos de Tóner</h3>
+                    <p>Suministro de cartuchos de tóner originales y compatibles de alta calidad para todas las marcas.</p>
+                </div>
+                <div class="servicio-item">
+                    <h3>Mantenimiento de Impresoras</h3>
+                    <p>Reparación, limpieza y mantenimiento preventivo para prolongar la vida útil de sus equipos de impresión.</p>
+                </div>
+                <div class="servicio-item">
+                    <h3>Asesoría Especializada</h3>
+                    <p>Ayuda personalizada para elegir el mejor equipo y consumible que se adapte a sus necesidades.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="sobre nosotros" class="section"></section> 
+       
+            <h2>Sobre ITANS Toner Service</h2>
+            <p>Somos una empresa dedicada a ofrecer **soluciones sntegrales en impresión**, con **16 años de trayectoria** en el sector. Nuestra misión es garantizar el óptimo funcionamiento de sus equipos, ofreciendo productos de calidad y un servicio técnico profesional.</p>
+            <p>Nuestra experiencia es su garantía de un servicio rápido, eficiente y confiable.</p>
+     
+    </section>
+
+    <section id="contáctanos" class="section
+        <div class="container">
+            <h2>Contáctanos</h2>
+            <p>Estamos listos para ayudarte con tus necesidades de tóner y mantenimiento.</p>
+            <p>📞 Teléfono: 0987-312=226</p>
+            <p>📧 Email: claudio1caballero1@gmail.com</p>
+            <form action="#" method="post">
+                <input type="text" placeholder="Tu Nombre" required>
+                <input type="email" placeholder="Tu Email" required>
+                <textarea placeholder="Tu Mensaje..." required></textarea>
+                <button type="submit" class="btn">Enviar Mensaje</button>
+            </form>
+        </div>
+    </section>
+    <body>
+   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Pequeño Rincón Personal</title>
+</head>
+<body>
+  
+    <main>
+      <section id="sobre mi" class="section>
+    
+        <div class= "container" >
+           <h2>¡Hola! Soy Claudio Caballero 👋</h2>
+           <p>Un poco sobre mí y lo que me apasiona.</p>
+          
+           <h2>¿Quién Soy?</h2>
+            <p>Soy una persona con un gran interés en Al area de Programacion y todo lo que tenga que ver a la informatica. Vivo en la ciudad de San Lorenzo-Paraguay** y disfruto mucho de **Ir a pescar y conocer nuevos lugares**.</p>
+            <p>Mi enfoque actual está en aprender más sobre Programacion de sistemas informaticos, para luego poder ofrecer servicios a mis futuros cliente.</p>
+         </div>
+      </section>
+        <hr>
+
+        <section id="habilidades">
+            <h2>Mis Habilidades Destacadas</h2>
+            <ul>
+                <li>✨ **electricitad domiciliario e industrial**</li>
+                <li>🛠️ **Tecnico en informatica**</li>
+                <li>💡 **instalador de camaras**</li>
+                <li>💡 **Actualmente soy emprendedor en el rubro de impresoras y ventas de cartuchos de toner**</li>
+            </ul>
+        </section>
+
+        <hr>
+
+        <section id="contacto">
+            <h2>Contactemos</h2>
+            <p>Puedes encontrarme en: facebook como Claudio Caballero</p>
+            <p>📧 Email: claudio1caballero1@gmail.com</p>
+        </section>
+      </section>
+
+
+    <!-- ACTIVIDAD DIDÁCTICA (PASO A PASO) -->
+    <section id="actividad" class="section">
+      <h2>🧭 Actividad didáctica paso a paso</h2>
+      <details open class="card">
+        <summary><strong>Instrucciones</strong> (expandidas)</summary>
+        <ol>
+          <li><strong>Clona este archivo</strong> como <span class="kbd">index.html</span>. Abre con un navegador.</li>
+          <li><strong>Menú de navegación</strong>: agrega un ítem <em>Contacto</em> y enlázalo a un nuevo <span class="kbd">#contacto</span> (puedes crear la sección vacía). Comprueba que se marque activo al hacer scroll.</li>
+          <li><strong>Galería de videos</strong>: sustituye una URL por un video local en <span class="kbd">/assets/videos/</span>. Asegúrate de que <code>preload="none"</code> siga presente.</li>
+          <li><strong>Audios</strong>: añade una cuarta pista. Debe reproducirse correctamente y tener título.</li>
+          <li><strong>Mapas</strong>: prueba el buscador con una ciudad distinta y crea un botón rápido para <em>Ciudad del Este</em>.</li>
+          <li><strong>Imágenes</strong>: agrega 3 imágenes más (dos naturaleza, una ciudad) y verifica que el filtro funcione. Al hacer clic, deben abrir en el modal.</li>
+          <li><strong>Accesibilidad</strong>: confirma que todos los elementos interactivos tienen texto, <code>aria-label</code> o <code>alt</code> adecuados. Prueba cerrar el modal con la tecla <span class="kbd">Esc</span>.</li>
+          <li><strong>Bonus</strong>: separa el CSS y JS en ficheros <span class="kbd">/css/styles.css</span> y <span class="kbd">/js/app.js</span> y enlázalos desde el HTML.</li>
+        </ol>
+        <p class="muted">Cuando termines, haz una breve autoevaluación: ¿qué aprendiste de HTML semántico, <em>responsive</em> y JS del DOM?</p>
+      </details>
+    </section>
+
+  </main>
+
+  <button id="toTop" class="cta top-btn" aria-label="Volver arriba">↑ Arriba</button>
+
+  <script>
+    /* =====================
+   7) FONDOS PERSONALIZADOS
+   ===================== */
+#videos {
+  background-color: #0c0032; /* Azul oscuro para Videos */
+}
+#audios {
+  background-color: #210032; /* Púrpura oscuro para Audios */
+}
+#mapas {
+  background-color: #320000; /* Marrón oscuro para Mapas */
+}
+#imagenes {
+  background-color: #0c3200; /* Verde oscuro para Imágenes */
+}
+#sobre\ nosotros { /* Nota: Se usa '\ ' para IDs con espacios, aunque es mejor evitar espacios */
+  background-color: #323200; /* Amarillo oscuro para Sobre Nosotros */
+}
+#contáctanos {
+  background-color: #003232; /* Cian oscuro para Contáctanos */
+}
+#sobre\ mi {
+  background-color: #000c32; /* Azul muy oscuro para Sobre Mí */
+}
+
+/* Opcional: Si quieres mantener el gradiente radial inicial en body, 
+   puedes usar un color sólido y un fondo más complejo. 
+   Por ejemplo, para Videos podrías usar: */
+/*
+#videos {
+  background: linear-gradient(135deg, #0c0032, #210032);
+}
+*/
+    // =====================================================
+    //  JS PRINCIPAL — Explicado paso a paso
+    // =====================================================
+
+    // 1) Menú hamburguesa en móvil
+    const burger = document.getElementById('burger');
+    const menu = document.getElementById('menu');
+    burger?.addEventListener('click', () => {
+      
+      const open = menu.classList.toggle('open');
+      burger.setAttribute('aria-expanded', String(open));
+    });
+
+    // 2) Enlaces activos según la sección visible (IntersectionObserver)
+    const navLinks = Array.from(document.querySelectorAll('header .nav a[href^="#"]'));
+    const sections = navLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const id = '#' + entry.target.id;
+        const link = navLinks.find(a => a.getAttribute('href') === id);
+        if (link) {
+          if (entry.isIntersecting) {
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+          }
+        }
+      });
+    }, {rootMargin: '-50% 0px -40% 0px', threshold: 0});
+    sections.forEach(sec => obs.observe(sec));
+
+    // 3) Botón "Arriba"
+    const toTop = document.getElementById('toTop');
+    toTop.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+
+    // 4) Mapas: actualizar iframe según input o botones predefinidos
+    const mapFrame = document.getElementById('mapFrame');
+    const placeInput = document.getElementById('place');
+    const setMapBtn = document.getElementById('setMap');
+    const quickBtns = [
+      {id:'asuncion', q:'Asunción, Paraguay'},
+      {id:'encarnacion', q:'Encarnación, Paraguay'},
+      {id:'cde', q:'Ciudad del Este, Paraguay'}, // ¡NUEVO!
+      
+    ];
+    <div class="map-inputs">
+  <input id="place" class="input" placeholder="Ej.: Asunción, Paraguay" value="Asunción, Paraguay" aria-label="Buscar lugar" />
+  <button id="setMap" class="btn">Mostrar en mapa</button>
+  <button id="asuncion" class="btn">Asunción</button>
+  <button id="encarnacion" class="btn">Encarnación</button>
+  <button id="cde" class="btn">Ciudad del Este</button> </div>
+  function setMap(q){
+  // Uso correcto del template literal ${...}
+  const url = `https://maps.google.com/maps?q=${encodeURIComponent(q)}&output=embed`;
+  mapFrame.src = url;
+}
+    setMapBtn.addEventListener('click', () => setMap(placeInput.value || 'Asunción, Paraguay'));
+    quickBtns.forEach(({id, q}) => {
+      const b = document.getElementById(id);
+      b?.addEventListener('click', () => setMap(q));
+    });
+
+    // 5) Filtros de imágenes
+    const filterBar = document.querySelector('.filters');
+    const imgGrid = document.getElementById('imageGrid');
+    filterBar.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const cat = btn.dataset.filter; // 'todos' | 'naturaleza' | 'ciudad'
+      // UI
+      filterBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Lógica
+      imgGrid.querySelectorAll('img').forEach(img => {
+        const show = (cat === 'todos') || (img.dataset.cat === cat);
+        img.style.display = show ? '' : 'none';
+      });
+    });
+
+    // 6) Modal (lightbox) para imágenes
+    const lightbox = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lbImg');
+    const lbCaption = document.getElementById('lbCaption');
+    const lbClose = document.getElementById('lbClose');
+
+    imgGrid.addEventListener('click', (e) => {
+      const img = e.target.closest('img');
+      if (!img) return;
+      lbImg.src = img.src.replace('/800/600', '/1200/900'); // imagen un poco más grande
+      lbImg.alt = img.alt;
+      lbCaption.textContent = img.alt;
+      lightbox.classList.add('open');
+      lightbox.setAttribute('aria-hidden', 'false');
+    });
+
+    function closeLightbox(){
+      lightbox.classList.remove('open');
+      lightbox.setAttribute('aria-hidden', 'true');
+      lbImg.src = '';
+    }
+    lbClose.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
+    // 7) Mejora: pausa videos al abrir otros (evita audios superpuestos)
+    document.querySelectorAll('video').forEach(v => {
+      v.addEventListener('play', () => {
+        document.querySelectorAll('video').forEach(o => { if (o !== v) o.pause(); });
+        document.querySelectorAll('audio').forEach(a => a.pause());
+      });
+    });
+
+    document.querySelectorAll('audio').forEach(a => {
+      a.addEventListener('play', () => {
+        document.querySelectorAll('audio').forEach(o => { if (o !== a) o.pause(); });
+        document.querySelectorAll('video').forEach(v => v.pause());
+      });
+    });
+
+    // 8) Accesibilidad: enfocar al contenedor del modal al abrir (opcional)
+    // Podrías agregar tabindex="-1" a .lightbox-inner y mover foco.
+
+  </script>
+</body>
+</html>
